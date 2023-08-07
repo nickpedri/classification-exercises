@@ -44,7 +44,22 @@ def get_telco_data():
         return telco
 
 
-def sql_query(db='None'):
+def sql_query(db='None', query='None'):
+    if db == 'None':
+        print('Database not specified.')
+    elif query == 'None':
+        print('No query!')
+    else:
+        db_url = get_connection(db)
+        df = pd.read_sql(query, db_url)
+        return df
+
+
+def show_tables(db='None'):
     if db == 'None':
         print('Database not specified')
-    pass
+    else:
+        db_url = get_connection(db)
+        query = 'SHOW TABLES'
+        tables = pd.read_sql(query, db_url)
+        return tables
