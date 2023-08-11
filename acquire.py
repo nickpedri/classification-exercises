@@ -38,7 +38,8 @@ def get_telco_data():
         query = '''SELECT * FROM customers AS cd
         LEFT JOIN contract_types as ct USING(contract_type_id)
         LEFT JOIN internet_service_types as ist USING(internet_service_type_id)
-        LEFT JOIN payment_types as pt USING(payment_type_id)'''
+        LEFT JOIN payment_types as pt USING(payment_type_id)
+        WHERE total_charges != '' '''
         telco = pd.read_sql(query, db_url)
         telco.to_csv(filename, index=False)
         return telco
