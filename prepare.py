@@ -1,6 +1,7 @@
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 import pandas as pd
+import acquire as ac
 
 
 def train_val_test(df, strat, seed=100):
@@ -16,10 +17,10 @@ def prep_iris(df):
 
 
 def prep_titanic(df):
-    titanic = df.drop(columns=['passenger_id', 'pclass', 'embarked', 'deck'])
-    titanic = pd.get_dummies(titanic, columns=['sex'], drop_first=True)
-    titanic = pd.get_dummies(titanic, columns=['class', 'embark_town'])
-    return titanic
+    df = df.drop(columns=['passenger_id', 'pclass', 'embarked', 'deck'])
+    df = pd.get_dummies(df, columns=['sex'], drop_first=True)
+    df = pd.get_dummies(df, columns=['class', 'embark_town'])
+    return df
 
 
 def prep_telco(df):
@@ -27,8 +28,9 @@ def prep_telco(df):
     telco['total_charges'] = telco['total_charges'].astype(float)
     telco = pd.get_dummies(telco, columns=['gender', 'partner', 'dependents', 'phone_service', 'multiple_lines',
                                            'online_security', 'online_backup', 'device_protection', 'tech_support',
-                                           'streaming_tv', 'streaming_movies', 'paperless_billing', 'churn',
-                                           'contract_type', 'internet_service_type', 'payment_type'], drop_first=True)
+                                           'streaming_tv', 'streaming_movies', 'paperless_billing', 'churn'],
+                           drop_first=True)
+    telco = pd.get_dummies(telco, columns=['contract_type', 'internet_service_type', 'payment_type'])
     return telco
 
 
@@ -51,29 +53,44 @@ def impute_df(df, column='', strategy='mean'):
     return df
 
 
-def evaluate(df, data, model='', target='', show_results=True):
+def titanic():
+    df = ac.get_titanic_data()
+    impute_df(df, 'age', strategy='median')
+    df = prep_titanic(df)
+    return df
+
+
+def baseline(df, data='', target_value='', show_results=True):
     df['baseline'] = df[data].mode()[0]  # Creates a baseline prediction from the mode of the data
-    m_acc = (df[data] == df[model]).mean()
     b_acc = (df[data] == df['baseline']).mean()
-    sub_rec = df[df[data] == target]  # Subset of all positive cases for recall
-    m_rec = (sub_rec[data] == sub_rec[model]).mean()
+    sub_rec = df[df[data] == target_value]  # Subset of all positive cases for recall
     b_rec = (sub_rec[data] == sub_rec['baseline']).mean()
-    s_pre = df[df[model] == target]  # Subset of all positive guesses
-    m_pre = (s_pre[data] == s_pre[model]).mean()
-    sub_bas_pre = df[df['baseline'] == target]
+    sub_bas_pre = df[df['baseline'] == target_value]
     if sub_bas_pre.empty:
-        bas_pre = 0
+        bas_pre = 0.0
     else:
         bas_pre = (sub_bas_pre[data] == sub_bas_pre['baseline']).mean()
     if show_results:
-        print(f'Model accuracy is: {round(m_acc*100,2)}%.')
-        print(f'Baseline accuracy is: {round(b_acc*100,2)}%.')
+        print(f'Baseline accuracy is: {round(b_acc * 100, 2)}%.')
+        print(f'Baseline recall is: {round(b_rec * 100, 2)}%.')
+        print(f'Baseline precision is: {round(bas_pre * 100, 2)}%.')
         print()
-        print(f'Model recall is: {round(m_rec*100,2)}%.')
-        print(f'Baseline recall is: {round(b_rec*100,2)}%.')
-        print()
-        print(f'Model precision is: {round(m_pre*100,2)}%.')
-        print(f'Baseline precision is: {round(bas_pre*100,2)}%.')
-        print()
-    #    print('Function returns: df, m_acc, b_acc, m_rec, b_rec, m_pre, bas_pre')
-    # return df, m_acc, b_acc, m_rec, b_rec, m_pre, bas_pre
+
+
+def evaluate(df, data='', model='Dataframe', target='', show_results=True):
+    df['model'] = model
+    m_acc = (df[data] == df['model']).mean()
+    sub_rec = df[df[data] == target]  # Subset of all positive cases for recall
+    m_rec = (sub_rec[data] == sub_rec['model']).mean()
+    s_pre = df[df['model'] == target]  # Subset of all positive guesses
+    m_pre = (s_pre[data] == s_pre['model']).mean()
+    if show_results:
+        print(f'Model accuracy is: {round(m_acc * 100, 2)}%.')
+        print(f'Model recall is: {round(m_rec * 100, 2)}%.')
+        print(f'Model precision is: {round(m_pre * 100, 2)}%.')
+
+
+def importance(training, model):
+    imp = {'cols': training.columns,
+           'importance': model.feature_importances_}
+    return pd.DataFrame(imp).sort_values(by='importance', ascending=False)
