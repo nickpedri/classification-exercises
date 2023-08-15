@@ -75,6 +75,8 @@ def baseline(df, data='', target_value='', show_results=True):
         print(f'Baseline recall is: {round(b_rec * 100, 2)}%.')
         print(f'Baseline precision is: {round(bas_pre * 100, 2)}%.')
         print()
+    df.drop(columns=['baseline'], inplace=True)
+
 
 
 def evaluate(df, data='', model='Dataframe', target='', show_results=True):
